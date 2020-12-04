@@ -1,0 +1,70 @@
+---
+title: "babe"
+author: "Kevin Cummiskey"
+date: "12/4/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(Lahman)
+
+#obtain season totals from Batting data frame
+seasons <- Batting %>% 
+  group_by(playerID, yearID) %>% 
+  select(-teamID, -lgID) %>% 
+  summarise_each(function(x) sum(x, na.rm = TRUE)) %>% 
+  select(-stint)
+
+#keep only players with at least 502 plate appearances
+seasons <- seasons %>% 
+  mutate(PA = AB + BB + HBP + SF) %>% 
+  filter(PA >= 502)
+
+# Note sacrifice flies were not recorded until 1954.
+
+# attach player name
+seasons <- seasons %>% 
+  left_join(select(People, playerID, nameLast, nameFirst)) %>% 
+  select(playerID, nameLast, nameFirst, everything())
+
+```
+
+
+```{r}
+#calculate OBP, slugging, and OPS
+
+seasons <- seasons %>% 
+  mutate(OBP = (H + BB + HBP)/(AB + BB + SF + HBP),
+         X1B = H - X2B - X3B - HR,
+         SLG = (X1B + 2*X2B + 3*X3B + 4*HR)/AB,
+         OPS = OBP + SLG)
+
+seasons %>% 
+  arrange(-OPS) %>% 
+  select(nameFirst,nameLast, yearID, OPS) %>% 
+  head()
+
+
+seasons %>% 
+  filter(yearID %in% c(1921,2004)) %>%
+  ggplot(aes(x = OPS, y = HR, color = factor(yearID))) +
+  geom_point()
+
+
+seasons <- seasons %>% 
+  group_by(yearID) %>% 
+  mutate(OPS.mean = mean(OPS),
+         OPS.stdev = sd(OPS),
+         OPS.std = (OPS - OPS.mean)/OPS.stdev)
+
+seasons %>% 
+  arrange(-OPS.std) %>% 
+  select(nameFirst,nameLast, yearID, OPS.std) %>% 
+  head()
+  
+```
+
+
