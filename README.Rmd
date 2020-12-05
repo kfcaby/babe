@@ -1,6 +1,6 @@
 ---
-title: "babe"
-author: "Kevin Cummiskey"
+title: "Was Babe Ruth's 1921 season the best in baseball history?"
+author: ""
 date: "12/4/2020"
 output: github_document
 ---
@@ -10,6 +10,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
 library(Lahman)
+library(knitr)
+library(ggrepel)
 
 #obtain season totals from Batting data frame
 seasons <- Batting %>% 
@@ -30,41 +32,109 @@ seasons <- seasons %>%
   left_join(select(People, playerID, nameLast, nameFirst)) %>% 
   select(playerID, nameLast, nameFirst, everything())
 
+seasons <- seasons %>% 
+  mutate(name = paste(nameLast, yearID))
+
+
 ```
 
 
-```{r}
-#calculate OBP, slugging, and OPS
 
+The following analysis uses the R Lahman package which imports Sean Lahman's database.  The seasons data.frame contains a row for each player and season from 1871 to 2019 with at least 502 plate appearences.  
+
+
+```{r}
+#calculate on base percentage, slugging, and OPS
 seasons <- seasons %>% 
   mutate(OBP = (H + BB + HBP)/(AB + BB + SF + HBP),
          X1B = H - X2B - X3B - HR,
          SLG = (X1B + 2*X2B + 3*X3B + 4*HR)/AB,
          OPS = OBP + SLG)
+```
 
+### The best seasons - OPS
+
+The table below contains the highest OPS seasons in baseball history (502 PA minimum).  While Barry Bonds' 2004 season had the highest OPS, Bonds' relatively few home runs that season make it tough to argue this season is the best in baseball history.  (On a side note, Bonds' low home run that season was not his fault - he nearly doubled the previous record for intentional walks in a season. *it would be interesting to take these intentional walks and see what his season would have looked like if his performance on those at-bats was similar to this others.*)
+
+
+
+```{r, echo = FALSE}
 seasons %>% 
   arrange(-OPS) %>% 
-  select(nameFirst,nameLast, yearID, OPS) %>% 
-  head()
+  select(playerID, nameFirst,nameLast, yearID, AB, PA, OPS, HR) %>% 
+  head(10) %>% 
+  kable(caption = "Highest OPS seasons in baseball history",
+        digits = 3) 
+```
 
+### Comparing Ruth 1921 to Bonds 2004
 
+The figure below is OPS vs. HRs for qualifying players (502 PAs) in 1921 and 2004.  A few observations:
+
+* There was much less offense in 1921 than 2004.
+
+* Bonds' OPS was exceptional.  His HR total was not...he finished fourth that year.
+
+* Ruth was exceptional in both.
+
+```{r, echo = FALSE}
 seasons %>% 
   filter(yearID %in% c(1921,2004)) %>%
   ggplot(aes(x = OPS, y = HR, color = factor(yearID))) +
-  geom_point()
+  geom_point() +
+  geom_text_repel(data = filter(seasons, name %in% c("Bonds 2004", "Ruth 1921")),
+                  aes(x = OPS, y = HR, label = name)) +
+  labs(color = "Year", title = "HR vs OPS for qualifying players in 1921 and 2004") +
+  theme_bw()
+```  
 
 
+### Comparing standardized OPS and HR
+
+Below, we calculate standardized OPS and HRs for player by season.  The standardized OPS is:
+
+$$\frac{OPS - \overline{OPS}}{s_{OPS}}"$$
+
+where $OPS$ is the player's OPS that season, $\overline{OPS}$ is the league average OPS that season, and $s_{OPS}$ is the standard deviation.  This gives us a measure of the player's performance relative to other players that year.
+
+```{r}
+#standardized OPS and HRs
 seasons <- seasons %>% 
   group_by(yearID) %>% 
   mutate(OPS.mean = mean(OPS),
          OPS.stdev = sd(OPS),
-         OPS.std = (OPS - OPS.mean)/OPS.stdev)
+         OPS.std = (OPS - OPS.mean)/OPS.stdev,
+         HR.mean = mean(HR),
+         HR.stdev = sd(HR),
+         HR.std = (HR - HR.mean)/HR.stdev,
+         HR_rate = AB/HR)
+```
+
+The figure below is standardized OPS and HRs for all qualifying seasons (502 PAs) in baseball history.
+
+```{r, echo = FALSE}
+#labeled seasons
+seasons_label <- seasons %>% 
+  arrange(-OPS) %>% 
+  head(10)
 
 seasons %>% 
-  arrange(-OPS.std) %>% 
-  select(nameFirst,nameLast, yearID, OPS.std) %>% 
-  head()
-  
+  ggplot(aes(x = OPS.std, y = HR.std)) +
+  geom_point() +
+  geom_text_repel(data =seasons_label, aes(x= OPS.std, y = HR.std,label = name),
+                  color = "red") +
+  geom_point(data = seasons_label, aes(x = OPS.std, y = HR.std), color = "red") +
+  theme_bw()
 ```
 
 
+
+
+Questions for Father Costa:
+
+1. Why not Babe Ruth 1920?
+
+
+### References
+
+* Friendly, M., Dalzell, C., Monkman, M., & Murphy, D. (2019). Sean Lahman’s Baseball Database. R package version 7.0-1.
