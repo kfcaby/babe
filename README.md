@@ -38,7 +38,7 @@ seasons %>%
   geom_point()
 ```
 
-![](babe_files/figure-gfm/unnamed-chunk-1-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-1-1.png)<!-- -->
 
 ``` r
 seasons <- seasons %>% 
