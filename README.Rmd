@@ -1,6 +1,6 @@
 ---
 title: "Was Babe Ruth's 1921 season the best in baseball history?"
-author: ""
+author: "Gabriel Costa and Kevin Cummiskey"
 date: "12/4/2020"
 output: github_document
 ---
@@ -34,8 +34,6 @@ seasons <- seasons %>%
 
 seasons <- seasons %>% 
   mutate(name = paste(nameLast, yearID))
-
-
 ```
 
 
@@ -57,11 +55,10 @@ seasons <- seasons %>%
 The table below contains the highest OPS seasons in baseball history (502 PA minimum).  While Barry Bonds' 2004 season had the highest OPS, Bonds' relatively few home runs that season make it tough to argue this season is the best in baseball history.  (On a side note, Bonds' low home run that season was not his fault - he nearly doubled the previous record for intentional walks in a season. *it would be interesting to take these intentional walks and see what his season would have looked like if his performance on those at-bats was similar to this others.*)
 
 
-
 ```{r, echo = FALSE}
 seasons %>% 
   arrange(-OPS) %>% 
-  select(playerID, nameFirst,nameLast, yearID, AB, PA, OPS, HR) %>% 
+  select(playerID, nameFirst,nameLast, yearID, AB, PA, OPS, HR, everything()) %>% 
   head(10) %>% 
   kable(caption = "Highest OPS seasons in baseball history",
         digits = 3) 
