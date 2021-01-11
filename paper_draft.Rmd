@@ -1,0 +1,127 @@
+---
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+library(tidyverse)
+library(Lahman)
+library(knitr)
+library(ggrepel)
+
+#obtain season totals from Batting data frame
+seasons <- Batting %>% 
+  group_by(playerID, yearID) %>% 
+  select(-teamID, -lgID) %>% 
+  summarise_each(function(x) sum(x, na.rm = TRUE)) %>% 
+  select(-stint)
+
+#keep only players with at least 502 plate appearances
+seasons <- seasons %>% 
+  mutate(PA = AB + BB + HBP + SF) %>% 
+  filter(PA >= 502)
+
+# Note sacrifice flies were not recorded until 1954.
+
+# attach player name
+seasons <- seasons %>% 
+  left_join(select(People, playerID, nameLast, nameFirst)) %>% 
+  select(playerID, nameLast, nameFirst, everything())
+
+seasons <- seasons %>% 
+  mutate(name = paste(nameLast, yearID))
+
+#calculate on base percentage, slugging, and OPS
+seasons <- seasons %>% 
+  mutate(OBP = (H + BB + HBP)/(AB + BB + SF + HBP),
+         X1B = H - X2B - X3B - HR,
+         SLG = (X1B + 2*X2B + 3*X3B + 4*HR)/AB,
+         OPS = OBP + SLG)
+```
+
+In 1921, Babe Ruth hit 59 home runs with an on-base percentage plus slugging (OPS) of 1.359.  It was an exceptional season with no other players coming close to matching these numbers until Bonds, Sosa, and McGwire in the late 1990s. Figure 1 depicts OPS versus home runs for every Major League hitter by season with at least 502 plate appearances.  All calculations were performed in R using data publicly available in the Lahman package (Lahman, 2019; Friendly 2020).   Only six players (Ruth, Williams, Maris, Sosa, McGwire, and Bonds) have seasons in which they hit at least 60 home runs or had an OPS greater than 1.250.  Barry Bonds' 2001 season is the only one in which a player hit more home runs and had a higher OPS than Ruth's 1921 season.    
+
+```{r, fig.cap= "On-base percentage plus slugging (OPS) versus home runs by season for players with at least 502 plate appearances (1884-present)."}
+seasons %>% 
+  ggplot(aes(x = OPS, y = HR)) +
+  geom_point() +
+  geom_text_repel(data = filter(seasons, (OPS > 1.25 | HR > 60)),
+                  aes(x = OPS, y = HR, label = name)) +
+  theme_bw() +
+  theme(text = element_text(size = 16)) +
+  labs(y = "Home runs") 
+
+
+```
+
+In comparing Ruth's 1921 and Bonds' 2001 seasons, let's first look at how they performed relative to other players in the league at that time.  Figure 2 depicts OPS versus HR for qualifying hitters (at least 502 plate appearences) in 1921 (red) and 2001 (blue). In 2001, over 50% of qualifying hitters had more than 20 home runs.  In 1921, only 8% of qualifying hitters had more than 20 home runs.  Only one player (Babe Ruth) hit more than 30 home runs in 1921 while one out of every four qualifying hitters accomplished it in 2001.  
+
+```{r, fig.cap = "On-base percentage plus slugging (OPS) versus home runs for players with at least 502 plate appearances in 1921 and 2001."}
+seasons %>% 
+  filter(yearID %in% c(1921,2001)) %>%
+  ggplot(aes(x = OPS, y = HR, color = factor(yearID))) +
+  geom_point() +
+  geom_text_repel(data = filter(seasons, name %in% c("Bonds 2001", "Ruth 1921")),
+                  aes(x = OPS, y = HR, label = name)) +
+  labs(color = "Year") +
+  theme_bw() 
+  
+```    
+
+
+Next, focusing solely on home runs, we look at the relative home run ratio.  The relative home run ratio is a measure of a hitter's home run production relative to other players in the league during the same season (Costa et al, 2019).  To calculate the relative home run ratio, we divide the player's home run rate by the league home run rate.  Table 1 contains the top ten relative home runs ratios for qualifying players from 1920 to the present.  Babe Ruth dominates this statistic, hitting home runs in over 10% of this at bats in multiple seasons while the league rate was a fraction of this.  By comparison, the highest RHRRs achieved by Bonds, Sosa, and McGwire were 4.67, 3.88, and 4.54, respectively.   
+
+```{r, message = FALSE}
+#calculate relative home run ratio
+HR <- Batting %>% 
+  group_by(playerID, yearID) %>% 
+  select(-teamID, -lgID) %>% 
+  summarise_each(function(x) sum(x, na.rm = TRUE)) %>% 
+  select(-stint) %>% 
+  mutate(PA = AB + BB + HBP + SF)
+
+HR <- HR %>% 
+  left_join(select(People, playerID, nameLast, nameFirst)) %>% 
+  select(playerID, nameLast, nameFirst, everything())
+
+HR <- HR %>% 
+  mutate(name = paste(nameLast, yearID))
+
+HR <- HR %>% 
+  group_by(yearID) %>% 
+  mutate(leagueHR = sum(HR),
+         leagueAB = sum(AB)) 
+
+HR <- HR %>% 
+  mutate(RHRR = (HR/AB)/(leagueHR/leagueAB)) %>% 
+  arrange(-RHRR)
+
+
+leaders <- HR %>% 
+  filter(PA >= 502, yearID >= 1920) %>% 
+  select(yearID, nameLast, HR, AB, RHRR) %>% 
+  head(10)
+
+leaders <- leaders %>% 
+  rename(year = yearID, name = nameLast)
+
+
+kable(leaders, digits = 2, caption = "Top ten relative home run ratios (RHRR) from 1920 to present.")
+
+
+```
+
+
+
+
+
+### References
+
+* Costa, G. B., Huber, M. R., & Saccoman, J. T. (2019). Understanding sabermetrics: An introduction to the science of baseball statistics. McFarland.
+
+* Friendly, M., Dalzell, C., Monkman, M., & Murphy, D. (2019). Sean Lahman’s Baseball Database. R package version 7.0-1.
+
+* Lahman, S. (2020) Lahman's Baseball Database, 1871-2019, Main page, http://www.seanlahman.com/baseball-archive/statistics/
+
+

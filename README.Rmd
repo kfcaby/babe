@@ -59,7 +59,7 @@ The table below contains the highest OPS seasons in baseball history (502 PA min
 seasons %>% 
   arrange(-OPS) %>% 
   select(playerID, nameFirst,nameLast, yearID, AB, PA, OPS, HR, everything()) %>% 
-  head(10) %>% 
+  head(20) %>% 
   kable(caption = "Highest OPS seasons in baseball history",
         digits = 3) 
 ```
