@@ -1,5 +1,5 @@
 ---
-output: pdf_document
+output: word_document
 ---
 
 ```{r setup, include=FALSE}
@@ -40,7 +40,7 @@ seasons <- seasons %>%
          OPS = OBP + SLG)
 ```
 
-In 1921, Babe Ruth hit 59 home runs with an on-base percentage plus slugging (OPS) of 1.359.  It was an exceptional season with no other players coming close to matching these numbers until Bonds, Sosa, and McGwire in the late 1990s. Figure 1 depicts OPS versus home runs for every Major League hitter by season with at least 502 plate appearances.  All calculations were performed in R using data publicly available in the Lahman package (Lahman, 2019; Friendly 2020).   Only six players (Ruth, Williams, Maris, Sosa, McGwire, and Bonds) have seasons in which they hit at least 60 home runs or had an OPS greater than 1.250.  Barry Bonds' 2001 season is the only one in which a player hit more home runs and had a higher OPS than Ruth's 1921 season.    
+In 1921, Babe Ruth hit 59 home runs with an on-base percentage plus slugging (OPS) of 1.359.  It was an exceptional season with no other players coming close to matching these numbers until Bonds, Sosa, and McGwire in the late 1990s. Figure 1 depicts OPS versus home runs for every Major League hitter by season  with at least 502 plate appearances (approximately 13,000 data points). The points in the upper right are the elite few who hit with exceptional power and consistency.  Their names are familiar to even the causal fan of baseball: Babe Ruth, Ted Williams, Roger Maris, Sammy Sosa, Mark McGwire, and Barry Bonds.     
 
 ```{r, fig.cap= "On-base percentage plus slugging (OPS) versus home runs by season for players with at least 502 plate appearances (1884-present)."}
 seasons %>% 
@@ -50,12 +50,31 @@ seasons %>%
                   aes(x = OPS, y = HR, label = name)) +
   theme_bw() +
   theme(text = element_text(size = 16)) +
-  labs(y = "Home runs") 
-
-
+  labs(y = "Home runs") +
+  ylim(0,73) +
+  xlim(0.45, 1.5)
 ```
 
-In comparing Ruth's 1921 and Bonds' 2001 seasons, let's first look at how they performed relative to other players in the league at that time.  Figure 2 depicts OPS versus HR for qualifying hitters (at least 502 plate appearences) in 1921 (red) and 2001 (blue). In 2001, over 50% of qualifying hitters had more than 20 home runs.  In 1921, only 8% of qualifying hitters had more than 20 home runs.  Only one player (Babe Ruth) hit more than 30 home runs in 1921 while one out of every four qualifying hitters accomplished it in 2001.  
+Notably, three players (Sosa, McGwire, and Bonds) mentioned above played during the so-called age of steriods in baseball and have been linked to varying degrees to performance enhancing drugs. Figure 2 depicts the same information as Figure 1 but excludes Sosa, McGwire, and Bonds.  Ruth's 1921, 1920, and 1927 seasons stand out as all the more singular accomplishments in history.  Other famous seasons depicted include Roger Maris' 1961 season in which he broke Ruth's single season home run record and Ted Williams 1941 season in which he hit over .400 for the season.      
+
+```{r, fig.cap= "On-base percentage plus slugging (OPS) versus home runs by season for players with at least 502 plate appearances (1884-present)."}
+seasons %>% 
+  filter(!nameLast %in% c("Bonds", "Sosa", "McGwire")) %>% 
+  ggplot(aes(x = OPS, y = HR)) +
+  geom_point() +
+  geom_text_repel(data = filter(seasons, (OPS > 1.25 | HR > 60) & !(nameLast %in% c("Bonds", "Sosa", "McGwire"))),
+                  aes(x = OPS, y = HR, label = name)) +
+  theme_bw() +
+  theme(text = element_text(size = 16)) +
+  labs(y = "Home runs") +
+  ylim(0,73) +
+  xlim(0.45, 1.5)
+```
+
+
+
+
+Barry Bonds' 2001 season is the only one in which a player hit more home runs and had a higher OPS than Ruth's 1921 season. In comparing Ruth's 1921 and Bonds' 2001 seasons, let's first look at how they performed relative to other players in the league at that time.  Figure 2 depicts OPS versus HR for qualifying hitters (at least 502 plate appearences) in 1921 (red) and 2001 (blue). In 2001, over 50% of qualifying hitters had more than 20 home runs.  In 1921, only 8% of qualifying hitters had more than 20 home runs.  Only one player (Babe Ruth) hit more than 30 home runs in 1921 while one out of every four qualifying hitters accomplished it in 2001.  
 
 ```{r, fig.cap = "On-base percentage plus slugging (OPS) versus home runs for players with at least 502 plate appearances in 1921 and 2001."}
 seasons %>% 
@@ -70,7 +89,7 @@ seasons %>%
 ```    
 
 
-Next, focusing solely on home runs, we look at the relative home run ratio.  The relative home run ratio is a measure of a hitter's home run production relative to other players in the league during the same season (Costa et al, 2019).  To calculate the relative home run ratio, we divide the player's home run rate by the league home run rate.  Table 1 contains the top ten relative home runs ratios for qualifying players from 1920 to the present.  Babe Ruth dominates this statistic, hitting home runs in over 10% of this at bats in multiple seasons while the league rate was a fraction of this.  By comparison, the highest RHRRs achieved by Bonds, Sosa, and McGwire were 4.67, 3.88, and 4.54, respectively.   
+Next, focusing solely on home runs, we look at the relative home run ratio.  The relative home run ratio is a measure of a hitter's home run production relative to other players in the league during the same season (Costa et al, 2019).  To calculate the relative home run ratio, we divide the player's home run rate by the league home run rate.  Table 1 contains the top ten relative home runs ratios for qualifying players from 1920 to the present.  All calculations were performed in R using data publicly available in the Lahman package (Lahman, 2019; Friendly 2020). Babe Ruth dominates this statistic, hitting home runs in over 10% of this at bats in multiple seasons while the league rate was a fraction of this.  By comparison, the highest RHRRs achieved by Bonds, Sosa, and McGwire were 4.67, 3.88, and 4.54, respectively.   
 
 ```{r, message = FALSE}
 #calculate relative home run ratio
